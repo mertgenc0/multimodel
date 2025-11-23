@@ -1,7 +1,7 @@
 import os
 import json
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import torchvision.transforms as transforms
 
@@ -27,7 +27,7 @@ class PISCDataset(Dataset):
         self.split = split
         self.task = task
 
-        # Relationship labels - ÖNCE TANIMLA
+        # Relationship labels
         self.coarse_labels = {
             'intimate': 0,
             'non-intimate': 1,
@@ -56,7 +56,7 @@ class PISCDataset(Dataset):
         else:
             self.transform = transform
 
-        # Load annotations (will be created after dataset download)
+        # Load annotations
         annotations_path = os.path.join(self.data_dir, 'annotations.json')
 
         # Initialize empty data structures
@@ -82,7 +82,7 @@ class PISCDataset(Dataset):
                     'pair_id': pair_id,
                     'coarse_label': pair_data.get('coarse_label', 'no-relation'),
                     'fine_label': pair_data.get('fine_label', 'no-relation'),
-                    'caption': pair_data.get('caption', ''),
+                    'caption': pair_data.get('caption', 'Two people standing together'),
                     'person1_bbox': pair_data.get('person1_bbox', [0, 0, 224, 224]),
                     'person2_bbox': pair_data.get('person2_bbox', [0, 0, 224, 224])
                 })
@@ -98,6 +98,7 @@ class PISCDataset(Dataset):
             dict with keys:
                 - image: Transformed image tensor [3, 224, 224]
                 - caption: Text description (string)
+                - label: Task-specific label (int)
                 - coarse_label: Coarse relationship label (int)
                 - fine_label: Fine relationship label (int)
                 - image_name: Image filename
@@ -153,11 +154,114 @@ class PISCDataset(Dataset):
             return len(self.fine_labels)
 
 
-# Test code
-if __name__ == "__main__":
-    print("🧪 Testing PISC Dataset Loader...")
+def get_pisc_dataloaders(data_root, batch_size=32, num_workers=0, task='fine'):
+    """
+    Create train, validation, and test dataloaders for PISC dataset
+
+    Args:
+        data_root: Path to data/processed directory
+        batch_size: Batch size for dataloaders
+        num_workers: Number of worker processes (0 for M2, 2-4 for others)
+        task: 'coarse' or 'fine' granularity
+
+    Returns:
+        train_loader, val_loader, test_loader
+    """
+
+    print("=" * 60)
+    print("📦 Creating PISC DataLoaders")
+    print("=" * 60)
+    print(f"Data root: {data_root}")
+    print(f"Batch size: {batch_size}")
+    print(f"Num workers: {num_workers}")
+    print(f"Task: {task}")
+
+    # Image transforms
+    train_transform = transforms.Compose([
+        transforms.Resize((256, 256)),
+        transforms.RandomCrop((224, 224)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
+
+    val_test_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
+
+    # Create datasets
+    train_dataset = PISCDataset(
+        data_dir=data_root,
+        split='train',
+        task=task,
+        transform=train_transform
+    )
+
+    val_dataset = PISCDataset(
+        data_dir=data_root,
+        split='val',
+        task=task,
+        transform=val_test_transform
+    )
+
+    test_dataset = PISCDataset(
+        data_dir=data_root,
+        split='test',
+        task=task,
+        transform=val_test_transform
+    )
+
+    # Create dataloaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True if torch.cuda.is_available() else False,
+        drop_last=True  # Drop incomplete batch
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True if torch.cuda.is_available() else False
+    )
+
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True if torch.cuda.is_available() else False
+    )
+
+    print("\n✅ DataLoaders created successfully!")
+    print(f"   Train batches: {len(train_loader)}")
+    print(f"   Val batches: {len(val_loader)}")
+    print(f"   Test batches: {len(test_loader)}")
     print("=" * 60)
 
+    return train_loader, val_loader, test_loader
+
+
+# Test code
+if __name__ == "__main__":
+    print("=" * 60)
+    print("🧪 Testing PISC Dataset Loader")
+    print("=" * 60)
+
+    # Test dataset
     dataset = PISCDataset(
         data_dir='processed',
         split='train',
@@ -172,12 +276,30 @@ if __name__ == "__main__":
         print(f"\n🔍 Sample Data:")
         sample = dataset[0]
         print(f"   Image shape: {sample['image'].shape}")
-        print(f"   Caption: {sample['caption'][:50]}...")
+        print(f"   Caption: {sample['caption']}")
         print(f"   Label: {sample['label'].item()}")
         print(f"   Fine label: {sample['fine_label'].item()}")
         print(f"   Coarse label: {sample['coarse_label'].item()}")
 
         print(f"\n✅ Dataset loader working correctly!")
+
+        # Test dataloaders
+        print(f"\n🧪 Testing DataLoaders...")
+        train_loader, val_loader, test_loader = get_pisc_dataloaders(
+            data_root='processed',
+            batch_size=4,
+            num_workers=0,
+            task='fine'
+        )
+
+        # Test one batch
+        print(f"\n🔍 Testing batch loading...")
+        batch = next(iter(train_loader))
+        print(f"   Batch images shape: {batch['image'].shape}")
+        print(f"   Batch labels shape: {batch['label'].shape}")
+        print(f"   Batch captions: {len(batch['caption'])} items")
+        print(f"   ✅ Batch loading works!")
+
     else:
         print(f"\n⚠️  No data found. Please:")
         print(f"   1. Download PISC dataset")
