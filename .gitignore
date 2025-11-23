@@ -15,14 +15,14 @@ ENV/
 .idea_modules/
 
 # Data
-data/raw/
-data/processed/
-data/captions/
+#data/raw/
+#data/processed/
+#data/captions/
 
 # Checkpoints & Results
-checkpoints/
-results/
-logs/
+#checkpoints/
+#results/
+#logs/
 *.pth
 *.pt
 

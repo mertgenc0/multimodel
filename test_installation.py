@@ -112,3 +112,85 @@ Mac Installation Test
 
 Process finished with exit code 0
 """
+
+"""
+social_relationship_recognition/
+│
+├── data/                          # Veri setleri ve veri işleme
+│   ├── raw/                       # Ham PISC veri seti (indirdiğinizde buraya)
+│   │   ├── images/               # Tüm görüntüler
+│   │   └── annotations/          # İlişki etiketleri
+│   ├── processed/                # İşlenmiş veriler
+│   │   ├── train/
+│   │   ├── val/
+│   │   └── test/
+│   ├── captions/                 # Üretilen metin açıklamaları
+│   ├── dataset.py                # PISC dataset loader
+│   └── preprocessing.py          # Veri ön işleme
+│
+├── models/                        # Model tanımları
+│   ├── baseline/                 # Baseline model (önce bunu yapacağız)
+│   │   ├── __init__.py
+│   │   ├── text_encoder.py      # LLM + CNN text encoder
+│   │   ├── image_encoder.py     # ResNet-50 + Attention
+│   │   ├── alignment.py         # Cosine similarity alignment
+│   │   ├── fusion.py            # Simple weighted fusion
+│   │   └── classifier.py        # Fully connected + Softmax
+│   │
+│   ├── components/               # Bizim yeniliklerimiz (sonra ekleyeceğiz)
+│   │   ├── __init__.py
+│   │   ├── fpn.py               # Feature Pyramid Network
+│   │   ├── iterative_refine.py # Iterative cross-modal refinement
+│   │   └── uncertainty_fusion.py # Uncertainty-aware fusion
+│   │
+│   └── proposed_model.py        # Komple bizim modelimiz
+│
+├── training/                     # Eğitim kodları
+│   ├── __init__.py
+│   ├── trainer.py               # Ana eğitim döngüsü
+│   ├── losses.py                # Loss fonksiyonları
+│   └── optimizer.py             # Optimizer ayarları
+│
+├── evaluation/                   # Değerlendirme kodları
+│   ├── __init__.py
+│   ├── metrics.py               # mAP, Accuracy, F1 hesaplama
+│   ├── visualize.py             # Attention map görselleştirme
+│   └── analyze.py               # Error analysis
+│
+├── experiments/                  # Deney scriptleri
+│   ├── train_baseline.py        # Baseline eğitimi
+│   ├── train_proposed.py        # Bizim model eğitimi
+│   ├── ablation_study.py        # Ablation deneyleri
+│   └── evaluate.py              # Test ve değerlendirme
+│
+├── configs/                      # Konfigürasyon dosyaları
+│   ├── baseline_config.yaml     # Baseline hyperparameters
+│   └── proposed_config.yaml     # Bizim model hyperparameters
+│
+├── utils/                        # Yardımcı fonksiyonlar
+│   ├── __init__.py
+│   ├── logger.py                # Logging
+│   ├── checkpoint.py            # Model kaydetme/yükleme
+│   └── helpers.py               # Genel yardımcı fonksiyonlar
+│
+├── notebooks/                    # Jupyter notebooks (analiz için)
+│   ├── data_exploration.ipynb   # Veri seti keşfi
+│   ├── baseline_test.ipynb      # Baseline test
+│   └── results_analysis.ipynb   # Sonuç analizi
+│
+├── checkpoints/                  # Eğitilmiş model ağırlıkları
+│   ├── baseline/
+│   └── proposed/
+│
+├── results/                      # Deney sonuçları
+│   ├── baseline/
+│   ├── proposed/
+│   └── ablation/
+│
+├── logs/                         # Eğitim logları
+│
+├── requirements.txt              # Python bağımlılıkları
+├── README.md                     # Proje açıklaması
+└── setup.py                      # Kurulum scripti
+
+"""
